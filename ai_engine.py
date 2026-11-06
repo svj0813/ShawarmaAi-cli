@@ -21,7 +21,7 @@ class ShawarmaBrain:
             )
 
         completion = self.client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="llama-3.1-8b-instant",  # Active Groq model identifier
             messages=[
                 {"role": "system", "content": system_instruction},
                 {"role": "user", "content": prompt}
