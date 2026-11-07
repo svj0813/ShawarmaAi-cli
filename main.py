@@ -1,8 +1,9 @@
-from typing import List, Optional
+import traceback
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from ai_engine import ShawarmaBrain, MedicalMusicEngine
+from typing import List, Optional
+from ai_engine import ShawarmaBrain
 
 app = FastAPI(title="Shawarma AI API")
 
@@ -25,10 +26,6 @@ class ChatRequest(BaseModel):
     mode: str = "general"
     history: Optional[List[Message]] = []
 
-@app.get("/")
-def root():
-    return {"status": "Shawarma AI Engine Active", "stack": "Python + FastAPI"}
-
 @app.post("/api/chat")
 def chat(request: ChatRequest):
     try:
@@ -39,8 +36,7 @@ def chat(request: ChatRequest):
         )
         return {"response": reply}
     except Exception as e:
+        print("\n=== FULL ERROR TRACEBACK ===")
+        traceback.print_exc()
+        print("============================\n")
         raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/api/music-health/{freq}")
-def music_health(freq: float):
-    return MedicalMusicEngine.analyze_tone(freq)

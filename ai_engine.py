@@ -1,7 +1,8 @@
 import os
 from typing import List, Dict
 from dotenv import load_dotenv
-from openai import OpenAI
+from google import genai
+from google.genai import types
 
 load_dotenv()
 
@@ -11,10 +12,7 @@ class ShawarmaBrain:
         if not api_key:
             raise ValueError("GEMINI_API_KEY environment variable is missing")
             
-        self.client = OpenAI(
-            api_key=api_key,
-            base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
-        )
+        self.client = genai.Client(api_key=api_key)
 
     def generate_response(
         self, 
@@ -30,21 +28,33 @@ class ShawarmaBrain:
                 "binaural beat frequencies, and sound-driven health interventions."
             )
 
-        messages = [{"role": "system", "content": system_instruction}]
-
-        # Append previous conversation history
+        contents = []
         if history:
-            messages.extend(history)
+            for msg in history:
+                role = "user" if msg["role"] == "user" else "model"
+                contents.append(
+                    types.Content(
+                        role=role,
+                        parts=[types.Part.from_text(text=msg["content"])]
+                    )
+                )
 
-        # Append current user prompt
-        messages.append({"role": "user", "content": prompt})
-
-        completion = self.client.chat.completions.create(
-            model="gemini-3.8-flash",  # Official model string for Google AI Studio OpenAI compatibility
-            messages=messages,
-            temperature=0.7,
+        contents.append(
+            types.Content(
+                role="user",
+                parts=[types.Part.from_text(text=prompt)]
+            )
         )
-        return completion.choices[0].message.content
+
+        response = self.client.models.generate_content(
+            model="gemini-3.8-flash",
+            contents=contents,
+            config=types.GenerateContentConfig(
+                system_instruction=system_instruction,
+                temperature=0.7,
+            )
+        )
+        return response.text
 
 class MedicalMusicEngine:
     @staticmethod

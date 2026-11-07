@@ -9,14 +9,7 @@ def main():
     
     while True:
         try:
-            sys.stdout.write("You: ")
-            sys.stdout.flush()
-            
-            prompt = sys.stdin.readline()
-            if not prompt:
-                break
-                
-            prompt = prompt.strip()
+            prompt = input("You: ").strip()
             
             if prompt.lower() in ["exit", "quit"]:
                 print("Goodbye!", flush=True)
@@ -30,13 +23,12 @@ def main():
                 "history": history
             }
             
-            response = requests.post(API_URL, json=payload)
+            response = requests.post(API_URL, json=payload, timeout=15)
             
             if response.status_code == 200:
                 reply = response.json().get("response", "")
                 print(f"\nShawarmaAI: {reply}\n", flush=True)
                 
-                # Append to local session memory
                 history.append({"role": "user", "content": prompt})
                 history.append({"role": "assistant", "content": reply})
             else:
@@ -45,6 +37,8 @@ def main():
         except KeyboardInterrupt:
             print("\nGoodbye!", flush=True)
             sys.exit(0)
+        except requests.exceptions.Timeout:
+            print("\n[Error]: Request timed out. Gemini API took too long to respond.\n", flush=True)
         except requests.exceptions.ConnectionError:
             print("\n[Error]: Could not connect to FastAPI server. Is uvicorn running?\n", flush=True)
             break
