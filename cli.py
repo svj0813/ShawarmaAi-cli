@@ -4,33 +4,49 @@ import requests
 API_URL = "http://127.0.0.1:8000/api/chat"
 
 def main():
-    print("🌯 ShawarmaAI CLI Initialized! Type 'exit' to quit.\n")
+    print("🌯 ShawarmaAI CLI Initialized (Memory Enabled)! Type 'exit' to quit.\n", flush=True)
+    history = []
     
     while True:
         try:
-            prompt = input("You: ")
-            if prompt.lower() in ["exit", "quit"]:
-                print("Goodbye!")
+            sys.stdout.write("You: ")
+            sys.stdout.flush()
+            
+            prompt = sys.stdin.readline()
+            if not prompt:
                 break
-            if not prompt.strip():
+                
+            prompt = prompt.strip()
+            
+            if prompt.lower() in ["exit", "quit"]:
+                print("Goodbye!", flush=True)
+                break
+            if not prompt:
                 continue
                 
-            response = requests.post(
-                API_URL,
-                json={"prompt": prompt, "mode": "general"}
-            )
+            payload = {
+                "prompt": prompt,
+                "mode": "general",
+                "history": history
+            }
+            
+            response = requests.post(API_URL, json=payload)
             
             if response.status_code == 200:
-                data = response.json()
-                print(f"\nShawarmaAI: {data.get('response')}\n")
+                reply = response.json().get("response", "")
+                print(f"\nShawarmaAI: {reply}\n", flush=True)
+                
+                # Append to local session memory
+                history.append({"role": "user", "content": prompt})
+                history.append({"role": "assistant", "content": reply})
             else:
-                print(f"\n[Error {response.status_code}]: {response.text}\n")
+                print(f"\n[Error {response.status_code}]: {response.text}\n", flush=True)
                 
         except KeyboardInterrupt:
-            print("\nGoodbye!")
+            print("\nGoodbye!", flush=True)
             sys.exit(0)
         except requests.exceptions.ConnectionError:
-            print("\n[Error]: Could not connect to FastAPI server. Is uvicorn running?\n")
+            print("\n[Error]: Could not connect to FastAPI server. Is uvicorn running?\n", flush=True)
             break
 
 if __name__ == "__main__":

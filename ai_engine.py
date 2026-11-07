@@ -1,4 +1,5 @@
 import os
+from typing import List, Dict
 from dotenv import load_dotenv
 from openai import OpenAI
 
@@ -10,13 +11,17 @@ class ShawarmaBrain:
         if not api_key:
             raise ValueError("GEMINI_API_KEY environment variable is missing")
             
-        # Google AI Studio's free OpenAI-compatible endpoint
         self.client = OpenAI(
             api_key=api_key,
             base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
         )
 
-    def generate_response(self, prompt: str, mode: str = "general") -> str:
+    def generate_response(
+        self, 
+        prompt: str, 
+        mode: str = "general", 
+        history: List[Dict[str, str]] = None
+    ) -> str:
         system_instruction = "You are Shawarma AI, a highly versatile AI assistant."
         
         if mode == "medical_music":
@@ -25,12 +30,18 @@ class ShawarmaBrain:
                 "binaural beat frequencies, and sound-driven health interventions."
             )
 
+        messages = [{"role": "system", "content": system_instruction}]
+
+        # Append previous conversation history
+        if history:
+            messages.extend(history)
+
+        # Append current user prompt
+        messages.append({"role": "user", "content": prompt})
+
         completion = self.client.chat.completions.create(
-            model="gemini-3.8-flash",  # Updated active free-tier model identifier for Google AI Studio
-            messages=[
-                {"role": "system", "content": system_instruction},
-                {"role": "user", "content": prompt}
-            ],
+            model="gemini-3.8-flash",  # Official model string for Google AI Studio OpenAI compatibility
+            messages=messages,
             temperature=0.7,
         )
         return completion.choices[0].message.content

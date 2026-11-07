@@ -1,3 +1,4 @@
+from typing import List, Optional
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -15,9 +16,14 @@ app.add_middleware(
 
 brain = ShawarmaBrain()
 
+class Message(BaseModel):
+    role: str
+    content: str
+
 class ChatRequest(BaseModel):
     prompt: str
     mode: str = "general"
+    history: Optional[List[Message]] = []
 
 @app.get("/")
 def root():
@@ -26,7 +32,11 @@ def root():
 @app.post("/api/chat")
 def chat(request: ChatRequest):
     try:
-        reply = brain.generate_response(request.prompt, request.mode)
+        reply = brain.generate_response(
+            prompt=request.prompt,
+            mode=request.mode,
+            history=[m.model_dump() for m in request.history] if request.history else []
+        )
         return {"response": reply}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
